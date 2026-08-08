@@ -1,0 +1,79 @@
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: financial_postgres
+
+    environment:
+      POSTGRES_DB: financial_etl
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d financial_etl"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  etl:
+    build: .
+    container_name: financial_etl
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: financial_etl
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+
+    command: python src/etl.py
+
+  api:
+    build: .
+    container_name: financial_api
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: financial_etl
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+    ports:
+      - "8000:8000"
+
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+  dashboard:
+    build: .
+    container_name: financial_dashboard
+
+    depends_on:
+      - api
+
+    ports:
+      - "8501:8501"
+
+    command: streamlit run dashboard/app.py --server.address=0.0.0.0 --server.port=8501
+
+volumes:
+  postgres_data:
