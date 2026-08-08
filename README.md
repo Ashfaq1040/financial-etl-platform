@@ -1,3 +1,5 @@
+[![Financial ETL CI](https://github.com/Ashfaq1040/financial-etl-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Ashfaq1040/financial-etl-platform/actions/workflows/ci.yml)
+
 # 💰 Financial ETL Platform
 
 > A production-style financial data pipeline that turns raw transaction data into validated, queryable, and interactive analytics.
